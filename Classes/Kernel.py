@@ -1,71 +1,102 @@
 import numpy as np
-import math
+from math import pow
 import matplotlib.pyplot as plt
+from time import time
 
 
 class Kernel(object):
     def __init__(self):
         # Specify these necessary inputs
-        self.parameter = np.zeros(3)
+        self.parameter = np.zeros(4)
         self.WindowLength = 1
-        self.TimePeriod = 0.01
-        self.knots = 21
+        self.TimePeriod = 0.1
+        self.knots = 4
 
         # Instance Variable Computation
-        # self.knots = np.arange(0, self.WindowLength+self.TimePeriod, self.TimePeriod)
-        self.t, self.tau = 0, 0
         self.knot_vector = np.linspace(0, self.WindowLength, self.knots)
         self.number_of_samples = int(self.WindowLength / self.TimePeriod)
-        self.a_0, self.a_1, self.a_2 = self.parameter
-        self.LengthFactor = 1 / (math.pow(self.t, 3) + math.pow((self.WindowLength - self.t), 3))
-        self.const, self.factor_0, self.factor_1, self.factor_2 = 0, 0, 0, 0
-        self.diff = self.t - self.tau
-        self.latent = self.WindowLength - self.tau
-        self.Constant = np.zeros((self.knots, self.number_of_samples))
-        self.Factor_0 = np.zeros((self.knots, self.number_of_samples))
-        self.Factor_1 = np.zeros((self.knots, self.number_of_samples))
-        self.Factor_2 = np.zeros((self.knots, self.number_of_samples))
+        self.a_0, self.a_1, self.a_2, self.a_3 = self.parameter
 
+        self.M = np.zeros((self.knots, self.knots))
+        self.K_ds = np.zeros((self.knots, self.knots))
+        self.N = np.zeros((self.knots, self.knots))
+        self.Vz = np.zeros(self.knots)
 
-    def compute(self):
+    def f(self, p, t, tau):
+        diff = t-tau
+        latent = self.WindowLength - tau
+        length_factor = 1/(pow(t, 3) + pow((self.WindowLength - t), 3))
+        answer = 0
+        if p == 0:
+            if t < tau:
+                answer = -0.5 * pow(diff, 2) * pow(tau, 3)
+            else:
+                answer = 0.5 * pow(diff, 2) * pow(latent, 3)
+        elif p == 1:
+            if t < tau:
+                answer = (-diff * pow(tau, 3) + 1.5 * pow(diff, 2) * pow(tau, 2))
+            else:
+                answer = (diff * pow(latent, 3) + 1.5 * pow(diff, 2) * pow(latent, 2))
+        elif p == 2:
+            if t < tau:
+                answer = (-pow(tau, 3) + 6 * diff * pow(tau, 2) - 3 * pow(diff, 2) * tau)
+            else:
+                answer = (pow(latent, 3) + 6 * pow(diff, 2) * pow(tau, 2) + 3 * diff * latent)
+        elif p == 3:
+            if t < tau:
+                answer = 9*pow(tau, 2) - (18*tau*diff) + 3*pow(diff, 2)
+            else:
+                answer = 9*pow(latent, 2) + (18*latent*diff) + 3*pow(diff, 2)
+        else:
+            raise ValueError('Expected p in (0, 1, 2 3); Got ' + str(p))
 
-        for row in range(self.knots):
-            for column in range(self.number_of_samples):
-                self.t, self.tau = row*self.TimePeriod, column*self.TimePeriod
+        return answer*length_factor
 
-                self.diff = self.t - self.tau
-                self.latent = self.WindowLength - self.tau
-                if self.t < self.tau:
-                    self.const = 9*math.pow(self.tau, 2) - (18*self.tau*self.diff) + 3*math.pow(self.diff, 2)
-                    self.factor_0 = -0.5 * math.pow(self.diff, 2) * math.pow(self.tau, 3)
-                    self.factor_1 = (-self.diff * math.pow(self.tau, 3) +
-                                     1.5 * math.pow(self.diff, 2) * math.pow(self.tau, 2))
-                    self.factor_2 = (-math.pow(self.tau, 3) +
-                                     6 * self.diff * math.pow(self.tau, 2) -
-                                     3 * math.pow(self.diff, 2) * self.tau)
+    def compute(self, z):
 
-                else:
-                    self.const = 9*math.pow(self.latent, 2) + (18*self.latent*self.diff) + 3*math.pow(self.diff, 2)
-                    self.factor_0 = 0.5 * math.pow(self.diff, 2) * math.pow(self.latent, 3)
-                    self.factor_1 = (self.diff * math.pow(self.latent, 3) +
-                                     1.5 * math.pow(self.diff, 2) * math.pow(self.latent, 2))
-                    self.factor_2 = (math.pow(self.latent, 3) +
-                                     6 * math.pow(self.diff, 2) * math.pow(self.tau, 2) +
-                                     3 * self.diff * self.latent)
+        self.knot_vector = np.linspace(0, self.WindowLength, self.knots)
+        self.number_of_samples = int(self.WindowLength / self.TimePeriod)
+        self.a_0, self.a_1, self.a_2, self.a_3 = self.parameter
 
-                self.Constant[row, column] = self.const
-                self.Factor_0[row, column] = self.factor_0
-                self.Factor_1[row, column] = self.factor_1
-                self.Factor_2[row, column] = self.factor_2
+        # Creation of M Matrix
+        for j, t_j in enumerate(self.knot_vector):
+            for l, t_l in enumerate(self.knot_vector):
+                summation = 0
+                for p in range(4):
+                    for q in range(4):
+                        for s in range(self.number_of_samples):
+                            t_s = s * self.TimePeriod
+                            summation += self.parameter[p]*self.parameter[q]*self.f(p, t_j, t_s)*self.f(q, t_l, t_s)
+                self.M[j, l] = summation
 
+        # Creation of K_ds Matrix
+        for j, t_j in enumerate(self.knot_vector):
+            for l, t_l in enumerate(self.knot_vector):
+                summation = 0
+                for p in range(4):
+                    summation += self.parameter[p]*self.f(p, t_j, t_l)
+                self.K_ds[j, l] = summation
+
+        # Creation of Vz
+        for j, t_j in enumerate(self.knot_vector):
+            kds = np.zeros(self.number_of_samples)
+            for s in range(self.number_of_samples):
+                for p in range(4):
+                    t_s = s * self.TimePeriod
+                    kds[s] += self.parameter[p]*self.f(p, t_j, t_s)
+            self.Vz[j] = np.dot(z, kds)
+
+        # Creation of N Matrix
+        self.N = self.K_ds - self.M
 
 if __name__ == '__main__':
+    t_now = time()
     kern = Kernel()
-    kern.compute()
-    print('Shape of Factor Matrix : ', np.shape(kern.Constant))
+    kern.parameter = np.array([-1, 10, 0, 1])
     z = np.random.random(kern.number_of_samples)
-    print('      Shape of <z,f_0> : ', np.shape(np.dot(z, kern.Constant.T)))
+    kern.compute(z)
 
+    # Optimization Routine
 
 
 
