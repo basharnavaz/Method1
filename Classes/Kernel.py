@@ -3,12 +3,12 @@ Main code for Method 1
 @author: Bash
 
 In this commit:
-    -> Fix M and Vz by replacing inner product by integrals
-    -> Parameterize DPG functions by system parameters
+    -> Symmetricity used to reduce computation time
+    -> Introduce Paramter a3 in kernel expressions
+    -> Minor correction to kernel expressions
 Future Work:
     -> Correct Kds;
     -> Write P Matrix Expression
-    -> Use symmetricity to reduce computations in M matrix
 """
 
 import numpy as np
@@ -33,7 +33,6 @@ class Kernel(object):
         self.number_of_samples = int(self.WindowLength / self.TimePeriod)
 
         self.M = np.zeros((self.knots, self.knots))
-        self.M_alpha = np.zeros((self.knots, self.knots))
         self.K_ds = np.zeros((self.knots, self.knots))
         self.N = np.zeros((self.knots, self.knots))
         self.Vz = np.zeros(self.knots)
@@ -73,7 +72,6 @@ class Kernel(object):
         self.knot_vector = np.linspace(0, self.WindowLength, self.knots)
         self.number_of_samples = int(self.WindowLength / self.TimePeriod)
         self.M = np.zeros((self.knots, self.knots))
-        self.M_alpha = np.zeros((self.knots, self.knots))
         self.K_ds = np.ones((self.knots, self.knots))
         self.N = np.zeros((self.knots, self.knots))
         self.Vz = np.zeros(self.knots)
@@ -95,21 +93,17 @@ class Kernel(object):
         # print('\nM_alpha Computed')
 
         # Creation of M Matrix
-        print('Computing M_alpha')
         a, b = 0, self.WindowLength
         for j, t_j in enumerate(self.knot_vector):
-            for l, t_l in enumerate(self.knot_vector):
-                if t_j <= t_l:
-                    e1 = fixed_quad(func=DPG1, a=a, b=t_j, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
-                    e2 = fixed_quad(func=DPG2, a=t_j, b=t_l, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
-                    e3 = fixed_quad(func=DPG3, a=t_l, b=b, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
-                else:
-                    e1 = fixed_quad(func=DPG4, a=a, b=t_l, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
-                    e2 = fixed_quad(func=DPG5, a=t_l, b=t_j, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
-                    e3 = fixed_quad(func=DPG6, a=t_j, b=b, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
-                self.M_alpha[j, l] = e1 + e2 + e3
-            sys.stdout.write('\rComputed {0} rows of {1}'. format(j, self.knots))
-        print('\nM_alpha Computed')
+            for l in range(j, self.knots):
+                t_l = self.knot_vector[l]
+                e1 = fixed_quad(func=DPG1, a=a, b=t_j, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
+                e2 = fixed_quad(func=DPG2, a=t_j, b=t_l, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
+                e3 = fixed_quad(func=DPG3, a=t_l, b=b, args=(t_j, a, b, t_l, self.parameter), n=5000)[0]
+                self.M[j, l], self.M[l, j] = e1 + e2 + e3, e1 + e2 + e3
+            sys.stdout.write('\rComputing M ->[{0}{1}] Computed {2} rows of {3}'.
+                             format(int(30*j/self.knots)*'#', int(30*(self.knots-j)/self.knots)*' ', j+1, self.knots))
+        print('\nM Computed')
 
         # Creation of K_ds Matrix
         for j, t_j in enumerate(self.knot_vector):
@@ -152,11 +146,8 @@ if __name__ == '__main__':
     z = np.loadtxt('y.txt')
     kern.compute(z)
     M = kern.M
-    M_alpha = kern.M_alpha
     print('Saving Now ... ')
     np.savetxt('M.txt', M, fmt='%1.2f')
-    np.savetxt('M_alpha.txt', M_alpha, fmt='%1.2f')
-
     plt.plot(M[1, :])
     plt.show()
 

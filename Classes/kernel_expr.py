@@ -61,31 +61,36 @@ def RK8(t, t_array, y_n, t_i, b):
 
 def DPG1(tau, t_j, a, b, t_l, params):
     a0, a1, a2, a3 = params
-    v = ((9*((tau-a)**2)-(a2*(tau-a)**3)+(t_j-tau)*(-18*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
-          0.5*((t_j-tau)**2)*(6-(6*a2*(tau-a))+3*a1*((tau-a)**2)-(a0*(tau-a)**3)))/((t_j-a)**3 + (b-t_j)**3)) * \
-        ((9*((tau-a)**2)+(t_l-tau)*(-18*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
-          0.5*((t_l-tau)**2)*(6-(6*a2*(tau-a))+3*a1*((tau-a)**2)-(a0*(tau-a)**3)))/((t_l-a)**3 + (b-t_l)**3))
+    v = ((9*a3*((tau-a)**2)-(a2*(tau-a)**3)+(t_j-tau)*(-18*a3*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
+          0.5*((t_j-tau)**2)*(6*a3-(6*a2*(tau-a))+3*a1*((tau-a)**2)-(a0*(tau-a)**3)))/((t_j-a)**3 + (b-t_j)**3)) * \
+        ((9*a3*((tau-a)**2)-(a2*(tau-a)**3)+(t_l-tau)*(-18*a3*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
+          0.5*((t_l-tau)**2)*(6*a3-(6*a2*(tau-a))+3*a1*((tau-a)**2)-(a0*(tau-a)**3)))/((t_l-a)**3 + (b-t_l)**3))
     return v
 
 
 def DPG2(tau, t_j, a, b, t_l, params):
     a0, a1, a2, a3 = params
-    v = ((9*((b-tau)**2)+a2*(b-t_j)**3+(t_j-tau)*(18*(b-tau) + 6*a2*(b-tau)**2 + a1*((b-tau)**3)) +
-          (0.5*(t_j-tau)**2)*(6+(6*a2*(b-tau))+(3*a1*(b-tau)**2)+(a0*(b-tau)**3)))/((t_j-a)**3 + (b-t_j)**3)) * \
-        ((9*((tau-a)**2)+(t_l-tau)*(-18*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
-          0.5*((t_l-tau)**2)*(6-(6*a2*(tau-a))+3*a1*((tau-a)**2)-(a0*(tau-a)**3)))/((t_l-a)**3 + (b-t_l)**3))
+    v = ((9*a3*((b-tau)**2)+a2*(b-t_j)**3+(t_j-tau)*(18*a3*(b-tau) + 6*a2*(b-tau)**2 + a1*((b-tau)**3)) +
+          (0.5*(t_j-tau)**2)*(6*a3+(6*a2*(b-tau))+(3*a1*(b-tau)**2)+(a0*(b-tau)**3)))/((t_j-a)**3 + (b-t_j)**3)) * \
+        ((9*a3*((tau-a)**2)-(a2*(tau-a)**3)+(t_l-tau)*(-18*a3*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
+          0.5*((t_l-tau)**2)*(6*a3-(6*a2*(tau-a))+3*a1*((tau-a)**2)-(a0*(tau-a)**3)))/((t_l-a)**3 + (b-t_l)**3))
     return v
 
 
 def DPG3(tau, t_j, a, b, t_l, params):
     a0, a1, a2, a3 = params
-    v = ((9*((b-tau)**2)+a2*(b-t_j)**3+(t_j-tau)*(18*(b-tau) + 6*a2*(b-tau)**2 + a1*((b-tau)**3)) +
-          (0.5*(t_j-tau)**2)*(6+(6*a2*(b-tau))+(3*a1*(b-tau)**2)+(a0*(b-tau)**3)))/((t_j-a)**3 + (b-t_j)**3)) * \
-        ((9*((b-tau)**2) + (t_l-tau)*(18*(b-tau) + 10*((b-tau)**3)) +
-          0.5*((t_l-tau)**2)*(6 + 30*((b-tau)**2)-((b-tau)**3)))/((t_l-a)**3 + (b-t_l)**3))
+    v = ((9*a3*((b-tau)**2)+a2*(b-t_j)**3+(t_j-tau)*(18*a3*(b-tau) + 6*a2*(b-tau)**2 + a1*((b-tau)**3)) +
+          (0.5*(t_j-tau)**2)*(6*a3+(6*a2*(b-tau))+(3*a1*(b-tau)**2)+(a0*(b-tau)**3)))/((t_j-a)**3 + (b-t_j)**3)) * \
+        ((9*a3*((b-tau)**2)+a2*(b-t_l)**3+(t_l-tau)*(18*a3*(b-tau) + 6*a2*(b-tau)**2 + a1*((b-tau)**3)) +
+          (0.5*(t_l-tau)**2)*(6*a3+(6*a2*(b-tau))+(3*a1*(b-tau)**2)+(a0*(b-tau)**3)))/((t_l-a)**3 + (b-t_l)**3))
     return v
 
-
+"""
+This part is commented because it has errors and is not being used in the code currently:
+    -> Parameter a3 is not introduced
+    -> Some parts may not have terms associated with the parameter a2 which was assumed to be zero eariler
+       so that will have to be added if being used
+    
 def DPG4(tau, t_j, a, b, t_l, params):
     a0, a1, a2, a3 = params
     v = ((9*((tau-a)**2)-(a2*(tau-a)**3)+(t_j-tau)*(-18*(tau-a)+6*a2*((tau-a)**2)-a1*((tau-a)**3)) +
@@ -111,3 +116,4 @@ def DPG6(tau, t_j, a, b, t_l, params):
         ((9*((b-tau)**2)+a2*(b-t_l)**3+(t_l-tau)*(18*(b-tau) + 6*a2*(b-tau)**2 + a1*((b-tau)**3)) +
           (0.5*(t_l-tau)**2)*(6+(6*a2*(b-tau))+(3*a1*(b-tau)**2)+(a0*(b-tau)**3)))/((t_l-a)**3 + (b-t_l)**3))
     return v
+"""
