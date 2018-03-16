@@ -4,7 +4,9 @@ For Method -1
 
 Kernel Expressions for Method 1 that use vectorization
 of the DPG functions
-Returns the value as the original Kernel expressions
+
+In this commit:
+    -> Convert DPG functions to functions that return a 4x4 P Matrix
 """
 
 import numpy as np
@@ -58,51 +60,48 @@ def RK8(t, t_array, y_n, t_i, b):
     return v
 
 
-def DPG1(tau, t_j, a, b, t_l, params):
-    a0, a1, a2, a3 = params
+def p1(tau, t_j, a, b, t_l):
     f1 = np.array([[-(0.5*(t_j-tau)**2)*(tau-a)**3],
                    [-(t_j-tau)*(tau-a)**3 + (0.5*(t_j-tau)**2)*(3*(tau-a)**2)],
-                   [-(tau-a)**3 + (t_j-tau)*6*(tau-a)**2 - (0.5*(t_j-tau)**2)*6*a2*(tau-a)],
+                   [-(tau-a)**3 + (t_j-tau)*6*(tau-a)**2 - (0.5*(t_j-tau)**2)*6*(tau-a)],
                    [9*((tau-a)**2) - (t_j-tau)*18*(tau-a) + (0.5*(t_j-tau)**2)*6]])/((t_j-a)**3 + (b-t_j)**3)
     f2 = np.array([[-(0.5*(t_l-tau)**2)*(tau-a)**3],
                    [-(t_l-tau)*(tau-a)**3 + (0.5*(t_l-tau)**2)*(3*(tau-a)**2)],
-                   [-(tau-a)**3 + (t_l-tau)*6*(tau-a)**2 - (0.5*(t_l-tau)**2)*6*a2*(tau-a)],
+                   [-(tau-a)**3 + (t_l-tau)*6*(tau-a)**2 - (0.5*(t_l-tau)**2)*6*(tau-a)],
                    [9*((tau-a)**2) - (t_l-tau)*18*(tau-a) + (0.5*(t_l-tau)**2)*6]])/((t_l-a)**3 + (b-t_l)**3)
-    p = np.outer(f1, f2)
-    return np.dot(params.T, np.dot(p, params))
+    return np.outer(f1, f2)
 
 
-def DPG2(tau, t_j, a, b, t_l, params):
-    a0, a1, a2, a3 = params
+def p2(tau, t_j, a, b, t_l):
     f1 = np.array([[(0.5*(t_j-tau)**2)*(b-tau)**3],
                    [(t_j-tau)*(b-tau)**3 + (0.5*(t_j-tau)**2)*(3*(b-tau)**2)],
-                   [(b-tau)**3 + (t_j-tau)*6*(b-tau)**2 + (0.5*(t_j-tau)**2)*6*a2*(b-tau)],
+                   [(b-tau)**3 + (t_j-tau)*6*(b-tau)**2 + (0.5*(t_j-tau)**2)*6*(b-tau)],
                    [9*((b-tau)**2) + (t_j-tau)*18*(b-tau) + (0.5*(t_j-tau)**2)*6]])/((t_j-a)**3 + (b-t_j)**3)
     f2 = np.array([[-(0.5*(t_l-tau)**2)*(tau-a)**3],
                    [-(t_l-tau)*(tau-a)**3 + (0.5*(t_l-tau)**2)*(3*(tau-a)**2)],
-                   [-(tau-a)**3 + (t_l-tau)*6*(tau-a)**2 - (0.5*(t_l-tau)**2)*6*a2*(tau-a)],
+                   [-(tau-a)**3 + (t_l-tau)*6*(tau-a)**2 - (0.5*(t_l-tau)**2)*6*(tau-a)],
                    [9*((tau-a)**2) - (t_l-tau)*18*(tau-a) + (0.5*(t_l-tau)**2)*6]])/((t_l-a)**3 + (b-t_l)**3)
-
-    p = np.outer(f1, f2)
-    return np.dot(params.T, np.dot(p, params))
+    return np.outer(f1, f2)
 
 
-def DPG3(tau, t_j, a, b, t_l, params):
-    a0, a1, a2, a3 = params
+def p3(tau, t_j, a, b, t_l):
     f1 = np.array([[(0.5*(t_j-tau)**2)*(b-tau)**3],
                    [(t_j-tau)*(b-tau)**3 + (0.5*(t_j-tau)**2)*(3*(b-tau)**2)],
-                   [(b-tau)**3 + (t_j-tau)*6*(b-tau)**2 + (0.5*(t_j-tau)**2)*6*a2*(b-tau)],
+                   [(b-tau)**3 + (t_j-tau)*6*(b-tau)**2 + (0.5*(t_j-tau)**2)*6*(b-tau)],
                    [9*((b-tau)**2) + (t_j-tau)*18*(b-tau) + (0.5*(t_j-tau)**2)*6]])/((t_j-a)**3 + (b-t_j)**3)
     f2 = np.array([[(0.5*(t_l-tau)**2)*(b-tau)**3],
                    [(t_l-tau)*(b-tau)**3 + (0.5*(t_l-tau)**2)*(3*(b-tau)**2)],
-                   [(b-tau)**3 + (t_l-tau)*6*(b-tau)**2 + (0.5*(t_l-tau)**2)*6*a2*(b-tau)],
+                   [(b-tau)**3 + (t_l-tau)*6*(b-tau)**2 + (0.5*(t_l-tau)**2)*6*(b-tau)],
                    [9*((b-tau)**2) + (t_l-tau)*18*(b-tau) + (0.5*(t_l-tau)**2)*6]])/((t_l-a)**3 + (b-t_l)**3)
-    p = np.outer(f1, f2)
-    return np.dot(params.T, np.dot(p, params))
+    return np.outer(f1, f2)
 
+if __name__ == '__main__':
+    param = np.array([-1, 10, 0, 1])
+    p1 = p1(tau=0.1, t_j=0, t_l=0, a=0, b=1)
+    p2 = p2(tau=0.1, t_j=0, t_l=0, a=0, b=1)
+    p3 = p3(tau=0.1, t_j=0, t_l=0, a=0, b=1)
 
-param = np.array([-1, 10, 0, 1])
-print('Outer Expressions')
-print('DPG1: ', DPG1(tau=0.1, t_j=0, t_l=0, a=0, b=1, params=param))
-print('DPG2: ', DPG2(tau=0.1, t_j=0, t_l=0, a=0, b=1, params=param))
-print('DPG3: ', DPG3(tau=0.1, t_j=0, t_l=0, a=0, b=1, params=param))
+    print('Outer Expressions')
+    print('DPG1: ', np.dot(param.T, np.dot(p1, param)))
+    print('DPG2: ', np.dot(param.T, np.dot(p2, param)))
+    print('DPG3: ', np.dot(param.T, np.dot(p3, param)))
